@@ -4,11 +4,12 @@ A simple Python crawler and mobile-friendly web app for Taiwan stock news.
 
 ## Features
 
-- Fetch latest Taiwan stock news from Yahoo Stock RSS.
+- Fetch latest Taiwan stock news from Yahoo Stock RSS and Cnyes public news API.
 - Store news title, time, source, link, and summary.
 - Mark related stocks such as TSMC `2330`, Hon Hai `2317`, MediaTek `2454`.
 - Load all listed Taiwan stocks from TWSE/MOPS open data.
 - Show an analyst-style market brief and stock radar.
+- Organize news by source, source category, theme category, and news type.
 - Classify news by keywords: AI, semiconductor, defense, shipping, construction, finance, biotech.
 - Export CSV and JSON.
 - Provide a mobile-friendly web page with search, category filters, refresh, and download buttons.
@@ -32,7 +33,7 @@ http://127.0.0.1:5000
 ## Run Crawler Only
 
 ```powershell
-.venv\Scripts\python.exe main.py --limit 20
+.venv\Scripts\python.exe main.py --limit 100
 ```
 
 Outputs:
