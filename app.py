@@ -4,8 +4,9 @@ from pathlib import Path
 
 from flask import Flask, jsonify, redirect, render_template, request, send_file, url_for
 
-from analyst import build_market_brief, build_stock_radar
+from analyst import build_favorite_reports, build_market_brief, build_stock_radar
 from crawler import fetch_latest_news
+from favorites import add_favorite, load_favorites, remove_favorite
 from main import CSV_PATH, write_csv
 from parser import enrich_news_item
 from stock_universe import load_listed_stocks, refresh_listed_stocks
@@ -100,6 +101,8 @@ def index():
     all_news_types = sorted({news_type for item in news_items for news_type in item.get("news_types", [])})
     market_brief = build_market_brief(news_items)
     stock_radar = build_stock_radar(news_items)
+    favorites = load_favorites()
+    favorite_reports = build_favorite_reports(favorites, news_items)
 
     return render_template(
         "index.html",
@@ -115,6 +118,8 @@ def index():
         market_brief=market_brief,
         stock_radar=stock_radar[:10],
         stock_count=len(load_listed_stocks()),
+        favorites=favorites,
+        favorite_reports=favorite_reports,
     )
 
 
@@ -128,6 +133,19 @@ def refresh():
 @app.route("/refresh-stocks")
 def refresh_stocks():
     refresh_listed_stocks()
+    return redirect(url_for("index"))
+
+
+@app.route("/favorites", methods=["POST"])
+def add_favorite_route():
+    query = request.form.get("stock", "")
+    add_favorite(query)
+    return redirect(url_for("index"))
+
+
+@app.route("/favorites/remove/<code>", methods=["POST"])
+def remove_favorite_route(code: str):
+    remove_favorite(code)
     return redirect(url_for("index"))
 
 
@@ -149,6 +167,18 @@ def api_analysis():
             "market_brief": build_market_brief(news_items),
             "stock_radar": build_stock_radar(news_items),
             "stock_count": len(load_listed_stocks()),
+        }
+    )
+
+
+@app.route("/api/favorites")
+def api_favorites():
+    news_items = load_news()
+    favorites = load_favorites()
+    return jsonify(
+        {
+            "favorites": favorites,
+            "reports": build_favorite_reports(favorites, news_items),
         }
     )
 
