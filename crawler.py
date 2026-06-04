@@ -2,6 +2,7 @@ import html
 import logging
 import os
 import re
+import time
 import warnings
 import xml.etree.ElementTree as ET
 from email.utils import parsedate_to_datetime
@@ -20,7 +21,19 @@ RSS_SOURCES = [
     {
         "name": "Yahoo \u80a1\u5e02",
         "url": "https://tw.stock.yahoo.com/rss?category=tw-market",
+        "category": "台股",
     },
+]
+
+CNYES_API_URL = "https://api.cnyes.com/media/api/v1/newslist/category/{slug}"
+CNYES_CATEGORIES = [
+    {"slug": "tw_stock", "name": "鉅亨台股"},
+    {"slug": "tw_premarket", "name": "鉅亨台股盤前"},
+    {"slug": "tw_quo", "name": "鉅亨台股盤勢"},
+    {"slug": "tw_bull", "name": "鉅亨台股公告"},
+    {"slug": "stock_report", "name": "鉅亨專家觀點"},
+    {"slug": "tech", "name": "鉅亨科技"},
+    {"slug": "headline", "name": "鉅亨頭條"},
 ]
 
 REQUEST_HEADERS = {
@@ -34,7 +47,7 @@ _SSL_FALLBACK_NOTIFIED = False
 FETCH_ARTICLE_DETAILS = os.environ.get("FETCH_ARTICLE_DETAILS", "false").lower() == "true"
 
 
-def fetch_latest_news(limit: int = 20) -> list[dict]:
+def fetch_latest_news(limit: int = 100) -> list[dict]:
     news_items = []
 
     for source in RSS_SOURCES:
@@ -44,8 +57,15 @@ def fetch_latest_news(limit: int = 20) -> list[dict]:
         except Exception as exc:
             LOGGER.warning("Failed to fetch %s RSS: %s", source["name"], exc)
 
+    for category in CNYES_CATEGORIES:
+        try:
+            news_items.extend(_fetch_cnyes_category(category, per_category_limit=30))
+        except Exception as exc:
+            LOGGER.warning("Failed to fetch %s API: %s", category["name"], exc)
+
     deduped_items = _deduplicate_by_link(news_items)
-    return deduped_items[:limit]
+    deduped_items.sort(key=lambda item: item.get("timestamp", 0), reverse=True)
+    return _limit_by_source(deduped_items, limit)
 
 
 def _fetch_rss_items(source: dict) -> list[dict]:
@@ -76,13 +96,56 @@ def _fetch_rss_items(source: dict) -> list[dict]:
                 {
                     "title": title,
                     "time": published_at,
+                    "timestamp": _time_to_timestamp(published_at),
                     "source": source["name"],
+                    "source_category": source.get("category", ""),
                     "link": link,
                     "summary": article_summary or rss_summary,
                 }
             )
         except Exception as exc:
             LOGGER.warning("Failed to parse one news item: %s", exc)
+            continue
+
+    return results
+
+
+def _fetch_cnyes_category(category: dict, per_category_limit: int) -> list[dict]:
+    params = {
+        "page": 1,
+        "limit": per_category_limit,
+        "startAt": int(time.time()) - 86400 * 45,
+        "endAt": int(time.time()),
+    }
+    url = CNYES_API_URL.format(slug=category["slug"])
+    response = _get_url(url, params=params)
+    response.raise_for_status()
+    payload = response.json()
+    rows = payload.get("items", {}).get("data", [])
+    results = []
+
+    for row in rows:
+        try:
+            news_id = row.get("newsId")
+            title = _clean_text(row.get("title", ""))
+            summary = _clean_text(row.get("content", ""))
+            published_at = _timestamp_to_iso(row.get("publishAt"))
+            link = f"https://news.cnyes.com/news/id/{news_id}" if news_id else ""
+            source_category = _cnyes_category_name(row, category["name"])
+
+            results.append(
+                {
+                    "title": title,
+                    "time": published_at,
+                    "timestamp": int(row.get("publishAt") or 0),
+                    "source": "鉅亨網",
+                    "source_category": source_category,
+                    "link": link,
+                    "summary": summary,
+                }
+            )
+        except Exception as exc:
+            LOGGER.warning("Failed to parse one Cnyes news item: %s", exc)
             continue
 
     return results
@@ -112,16 +175,16 @@ def _fetch_article_summary(url: str) -> str:
         return ""
 
 
-def _get_url(url: str) -> requests.Response:
+def _get_url(url: str, params: dict | None = None) -> requests.Response:
     global _SSL_FALLBACK_NOTIFIED
 
     try:
-        return requests.get(url, headers=REQUEST_HEADERS, timeout=15)
+        return requests.get(url, params=params, headers=REQUEST_HEADERS, timeout=15)
     except SSLError:
         if not _SSL_FALLBACK_NOTIFIED:
             LOGGER.warning("SSL verify failed. Retrying public news requests without certificate verification.")
             _SSL_FALLBACK_NOTIFIED = True
-        return requests.get(url, headers=REQUEST_HEADERS, timeout=15, verify=False)
+        return requests.get(url, params=params, headers=REQUEST_HEADERS, timeout=15, verify=False)
 
 
 def _get_text(item: ET.Element, tag_name: str) -> str:
@@ -159,6 +222,36 @@ def _normalize_time(value: str) -> str:
         return value
 
 
+def _time_to_timestamp(value: str) -> int:
+    if not value:
+        return 0
+    try:
+        return int(parsedate_to_datetime(value).timestamp())
+    except Exception:
+        try:
+            return int(value)
+        except Exception:
+            return 0
+
+
+def _timestamp_to_iso(value) -> str:
+    try:
+        return time.strftime("%Y-%m-%dT%H:%M:%S+00:00", time.gmtime(int(value)))
+    except Exception:
+        return ""
+
+
+def _cnyes_category_name(row: dict, fallback: str) -> str:
+    categories = row.get("category") or []
+    if categories and isinstance(categories, list):
+        names = [item.get("name", "") for item in categories if item.get("name")]
+        if names:
+            return "、".join(names)
+    if row.get("categoryName"):
+        return str(row["categoryName"])
+    return fallback
+
+
 def _clean_text(value: str) -> str:
     text = html.unescape(value or "")
     text = BeautifulSoup(text, "html.parser").get_text(" ")
@@ -184,3 +277,29 @@ def _deduplicate_by_link(news_items: list[dict]) -> list[dict]:
         deduped.append(item)
 
     return deduped
+
+
+def _limit_by_source(news_items: list[dict], limit: int) -> list[dict]:
+    max_per_source = max(20, int(limit * 0.8))
+    source_counts = {}
+    selected = []
+    skipped = []
+
+    for item in news_items:
+        source = item.get("source", "")
+        count = source_counts.get(source, 0)
+        if count < max_per_source:
+            selected.append(item)
+            source_counts[source] = count + 1
+        else:
+            skipped.append(item)
+
+        if len(selected) >= limit:
+            return selected
+
+    for item in skipped:
+        selected.append(item)
+        if len(selected) >= limit:
+            break
+
+    return selected
