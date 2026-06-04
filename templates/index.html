@@ -157,7 +157,7 @@
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 14px;
+      overflow: hidden;
     }
 
     .favorite-head {
@@ -165,6 +165,8 @@
       grid-template-columns: 1fr auto;
       gap: 8px;
       align-items: start;
+      padding: 14px;
+      cursor: pointer;
     }
 
     .favorite-name {
@@ -175,6 +177,71 @@
     .subtle {
       color: var(--muted);
       font-size: 13px;
+    }
+
+    .favorite-body {
+      border-top: 1px solid var(--line);
+      padding: 0 14px 14px;
+      display: none;
+    }
+
+    .favorite-card.open .favorite-body {
+      display: block;
+    }
+
+    .toggle {
+      background: #fff;
+      color: var(--brand);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .highlight {
+      border-left: 4px solid var(--brand);
+      background: #f8fbff;
+      border-radius: 8px;
+      padding: 10px 11px;
+      margin: 0 0 10px;
+      color: #24364a;
+      font-weight: 600;
+    }
+
+    .tone-bull {
+      background: #e8f7ee;
+      color: #17613a;
+    }
+
+    .tone-risk {
+      background: #fff1f0;
+      color: #9a2a20;
+    }
+
+    .tone-neutral {
+      background: #eef4fb;
+      color: #244b6f;
+    }
+
+    .mark-good {
+      color: #17613a;
+      font-weight: 700;
+    }
+
+    .mark-risk {
+      color: #9a2a20;
+      font-weight: 700;
+    }
+
+    .mark-gap {
+      color: #8a5a00;
+      font-weight: 700;
+    }
+
+    .mark-data {
+      color: #0b6bcb;
+      font-weight: 700;
     }
 
     .report-grid {
@@ -545,94 +612,97 @@
                   <div class="subtle">{{ report.stock.industry }} · &#20449;&#24515;&#24230; {{ report.confidence }} · {{ report.news_count }} &#21063;&#30456;&#38364;&#26032;&#32862;</div>
                 </div>
                 <div>
-                  <span class="view">{{ report.view }}</span>
+                  <span class="view {% if '偏多' in report.view %}tone-bull{% elif '風險' in report.view %}tone-risk{% else %}tone-neutral{% endif %}">{{ report.view }}</span>
+                  <div class="toggle">&#23637;&#38283;&#20998;&#26512;</div>
                   <form method="post" action="{{ url_for('remove_favorite_route', code=report.stock.code) }}" style="margin-top:8px">
                     <button type="submit" class="button">&#31227;&#38500;</button>
                   </form>
                 </div>
               </div>
-              <p class="brief">{{ report.thesis }}</p>
-              <div class="chips">
-                {% for category in report.top_categories %}
-                  <span class="chip">{{ category }}</span>
-                {% endfor %}
-                {% for news_type in report.top_news_types %}
-                  <span class="chip">{{ news_type }}</span>
-                {% endfor %}
-              </div>
+              <div class="favorite-body">
+                <p class="highlight">{{ report.thesis }}</p>
+                <div class="chips">
+                  {% for category in report.top_categories %}
+                    <span class="chip">{{ category }}</span>
+                  {% endfor %}
+                  {% for news_type in report.top_news_types %}
+                    <span class="chip">{{ news_type }}</span>
+                  {% endfor %}
+                </div>
 
-              <div class="data-grid">
-                <div class="data-card">
-                  <strong>&#20132;&#26131;&#36039;&#26009;</strong>
-                  <span>
-                    {% if report.market_data.price.status == "ok" %}
-                      {{ report.market_data.price.date }} 收 {{ report.market_data.price["收盤價"] }}
-                    {% else %}
-                      {{ report.market_data.price.status }}
-                    {% endif %}
-                  </span>
+                <div class="data-grid">
+                  <div class="data-card">
+                    <strong class="mark-data">&#20132;&#26131;&#36039;&#26009;</strong>
+                    <span>
+                      {% if report.market_data.price.status == "ok" %}
+                        {{ report.market_data.price.date }} 收 {{ report.market_data.price["收盤價"] }}
+                      {% else %}
+                        <span class="mark-gap">{{ report.market_data.price.status }}</span>
+                      {% endif %}
+                    </span>
+                  </div>
+                  <div class="data-card">
+                    <strong class="mark-data">&#27861;&#20154;&#20986;&#20837;</strong>
+                    <span>
+                      {% if report.market_data.institutional.status == "ok" %}
+                        {{ report.market_data.institutional.date }} 三大法人 {{ report.market_data.institutional.get("三大法人買賣超股數", "-") }}
+                      {% else %}
+                        <span class="mark-gap">{{ report.market_data.institutional.status }}</span>
+                      {% endif %}
+                    </span>
+                  </div>
+                  <div class="data-card">
+                    <strong class="mark-data">&#20844;&#21496;&#20272;&#20540;</strong>
+                    <span>
+                      {% if report.market_data.valuation.status == "ok" %}
+                        PE {{ report.market_data.valuation.get("本益比", "-") }} / PB {{ report.market_data.valuation.get("股價淨值比", "-") }}
+                      {% else %}
+                        <span class="mark-gap">{{ report.market_data.valuation.status }}</span>
+                      {% endif %}
+                    </span>
+                  </div>
+                  <div class="data-card">
+                    <strong class="mark-data">&#36039;&#37329;&#27969;&#21521;</strong>
+                    <span>
+                      {% if report.market_data.margin.status == "ok" %}
+                        融資 {{ report.market_data.margin.get("融資餘額", "-") }} / 融券 {{ report.market_data.margin.get("融券餘額", "-") }}
+                      {% else %}
+                        <span class="mark-gap">{{ report.market_data.margin.status }}</span>
+                      {% endif %}
+                    </span>
+                  </div>
                 </div>
-                <div class="data-card">
-                  <strong>&#27861;&#20154;&#20986;&#20837;</strong>
-                  <span>
-                    {% if report.market_data.institutional.status == "ok" %}
-                      {{ report.market_data.institutional.date }} 三大法人 {{ report.market_data.institutional.get("三大法人買賣超股數", "-") }}
-                    {% else %}
-                      {{ report.market_data.institutional.status }}
-                    {% endif %}
-                  </span>
-                </div>
-                <div class="data-card">
-                  <strong>&#20844;&#21496;&#20272;&#20540;</strong>
-                  <span>
-                    {% if report.market_data.valuation.status == "ok" %}
-                      PE {{ report.market_data.valuation.get("本益比", "-") }} / PB {{ report.market_data.valuation.get("股價淨值比", "-") }}
-                    {% else %}
-                      {{ report.market_data.valuation.status }}
-                    {% endif %}
-                  </span>
-                </div>
-                <div class="data-card">
-                  <strong>&#36039;&#37329;&#27969;&#21521;</strong>
-                  <span>
-                    {% if report.market_data.margin.status == "ok" %}
-                      融資 {{ report.market_data.margin.get("融資餘額", "-") }} / 融券 {{ report.market_data.margin.get("融券餘額", "-") }}
-                    {% else %}
-                      {{ report.market_data.margin.status }}
-                    {% endif %}
-                  </span>
-                </div>
-              </div>
 
-              <div class="report-grid">
-                <div class="report-box">
-                  <h3>&#20998;&#26512;&#24107;&#20381;&#25818;</h3>
-                  <ul>
-                    {% for item in report.evidence %}
-                      <li>{{ item }}</li>
-                    {% endfor %}
-                  </ul>
+                <div class="report-grid">
+                  <div class="report-box">
+                    <h3 class="mark-good">&#20998;&#26512;&#24107;&#20381;&#25818;</h3>
+                    <ul>
+                      {% for item in report.evidence %}
+                        <li>{{ item }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                  <div class="report-box">
+                    <h3 class="mark-risk">&#39080;&#38570;&#33287;&#26410;&#23436;&#25972;&#36039;&#26009;</h3>
+                    <ul>
+                      {% for item in report.risks %}
+                        <li>{{ item }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
                 </div>
-                <div class="report-box">
-                  <h3>&#39080;&#38570;&#33287;&#26410;&#23436;&#25972;&#36039;&#26009;</h3>
-                  <ul>
-                    {% for item in report.risks %}
-                      <li>{{ item }}</li>
-                    {% endfor %}
-                  </ul>
-                </div>
-              </div>
 
-              {% if report.latest_news %}
-                <div class="report-box" style="margin-top:10px">
-                  <h3>&#25910;&#34255;&#32929;&#37325;&#40670;&#26032;&#32862;</h3>
-                  <ul>
-                    {% for item in report.latest_news %}
-                      <li><a href="{{ item.link }}" target="_blank" rel="noopener noreferrer">{{ item.title }}</a></li>
-                    {% endfor %}
-                  </ul>
-                </div>
-              {% endif %}
+                {% if report.latest_news %}
+                  <div class="report-box" style="margin-top:10px">
+                    <h3 class="mark-data">&#25910;&#34255;&#32929;&#37325;&#40670;&#26032;&#32862;</h3>
+                    <ul>
+                      {% for item in report.latest_news %}
+                        <li><a href="{{ item.link }}" target="_blank" rel="noopener noreferrer">{{ item.title }}</a></li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                {% endif %}
+              </div>
             </div>
           {% endfor %}
         </section>
@@ -670,5 +740,20 @@
       {% endif %}
     </div>
   </main>
+  <script>
+    document.querySelectorAll(".favorite-head").forEach((head) => {
+      head.addEventListener("click", (event) => {
+        if (event.target.closest("form")) {
+          return;
+        }
+        const card = head.closest(".favorite-card");
+        card.classList.toggle("open");
+        const toggle = card.querySelector(".toggle");
+        if (toggle) {
+          toggle.textContent = card.classList.contains("open") ? "\u6536\u21512\u5206\u6790" : "\u5c55\u958b\u5206\u6790";
+        }
+      });
+    });
+  </script>
 </body>
 </html>
