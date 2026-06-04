@@ -1,13 +1,26 @@
-from stock_mapping import CATEGORY_KEYWORDS, STOCK_MAPPING
+from stock_mapping import CATEGORY_KEYWORDS
+from stock_universe import load_listed_stocks
 
 
 def find_related_stocks(title: str, summary: str) -> list[dict[str, str]]:
     text = f"{title or ''} {summary or ''}"
     related = []
+    seen_codes = set()
 
-    for company_name, stock_code in STOCK_MAPPING.items():
-        if company_name in text:
-            related.append({"name": company_name, "code": stock_code})
+    for stock in load_listed_stocks():
+        aliases = stock.get("aliases", [])
+        if any(alias and alias in text for alias in aliases):
+            code = str(stock.get("code", ""))
+            if code in seen_codes:
+                continue
+            seen_codes.add(code)
+            related.append(
+                {
+                    "name": str(stock.get("name", "")),
+                    "code": code,
+                    "industry": str(stock.get("industry", "")),
+                }
+            )
 
     return related
 
