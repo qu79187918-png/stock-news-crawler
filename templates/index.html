@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>&#21488;&#32929;&#26032;&#32862;&#26597;&#35426;</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #18202a;
+      --muted: #697386;
+      --line: #d9dee8;
+      --brand: #0b6bcb;
+      --brand-dark: #084f96;
+      --chip: #eef4fb;
+      --stock: #fff3dc;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      line-height: 1.5;
+    }
+
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .wrap {
+      width: min(980px, 100%);
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0;
+    }
+
+    .count {
+      color: var(--muted);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: 1fr 160px auto;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    input,
+    select,
+    button,
+    .button {
+      height: 42px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      font: inherit;
+    }
+
+    input,
+    select {
+      width: 100%;
+      background: #fff;
+      color: var(--text);
+      padding: 0 12px;
+    }
+
+    button,
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--brand);
+      padding: 0 14px;
+      text-decoration: none;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    button:hover,
+    .button:hover {
+      background: var(--brand-dark);
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .actions .button {
+      background: #fff;
+      color: var(--brand);
+      border-color: var(--line);
+    }
+
+    main {
+      padding: 12px 0 28px;
+    }
+
+    .news-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    article {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    article h2 {
+      margin: 0 0 8px;
+      font-size: 17px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    article h2 a {
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    article h2 a:hover {
+      color: var(--brand);
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .summary {
+      margin: 0 0 10px;
+      color: #334155;
+      font-size: 14px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chip {
+      background: var(--chip);
+      color: #244b6f;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 12px;
+    }
+
+    .stock {
+      background: var(--stock);
+      color: #7a4a00;
+    }
+
+    .empty {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 22px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    @media (max-width: 640px) {
+      .wrap {
+        padding: 14px;
+      }
+
+      .top {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      h1 {
+        font-size: 20px;
+      }
+
+      form {
+        grid-template-columns: 1fr;
+      }
+
+      .actions {
+        flex-direction: column;
+      }
+
+      .button,
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="top">
+        <h1>&#21488;&#32929;&#26032;&#32862;&#26597;&#35426;</h1>
+        <div class="count">&#30446;&#21069; {{ total_count }} &#31558;</div>
+      </div>
+
+      <form method="get" action="/">
+        <input name="q" value="{{ keyword }}" placeholder="&#25628;&#23563;&#20844;&#21496;&#12289;&#20195;&#34399;&#12289;&#38364;&#37749;&#23383;">
+        <select name="category">
+          <option value="">&#20840;&#37096;&#20998;&#39006;</option>
+          {% for category in categories %}
+            <option value="{{ category }}" {% if category == selected_category %}selected{% endif %}>{{ category }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit">&#26597;&#35426;</button>
+      </form>
+
+      <div class="actions">
+        <a class="button" href="{{ url_for('refresh') }}">&#21047;&#26032;&#26368;&#26032;&#26032;&#32862;</a>
+        <a class="button" href="{{ url_for('download_csv') }}">&#19979;&#36617; CSV</a>
+        <a class="button" href="{{ url_for('download_json') }}">&#19979;&#36617; JSON</a>
+        <a class="button" href="{{ url_for('index') }}">&#28165;&#38500;&#31621;&#36984;</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+      {% if news_items %}
+        <div class="news-list">
+          {% for item in news_items %}
+            <article>
+              <h2><a href="{{ item.link }}" target="_blank" rel="noopener noreferrer">{{ item.title }}</a></h2>
+              <div class="meta">{{ item.time }} &middot; {{ item.source }}</div>
+              <p class="summary">{{ item.summary }}</p>
+              <div class="chips">
+                {% for stock in item.related_stocks %}
+                  <span class="chip stock">{{ stock.name }} {{ stock.code }}</span>
+                {% endfor %}
+                {% for category in item.categories %}
+                  <span class="chip">{{ category }}</span>
+                {% endfor %}
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty">&#30446;&#21069;&#27794;&#26377;&#31526;&#21512;&#26465;&#20214;&#30340;&#26032;&#32862;&#65292;&#35531;&#21047;&#26032;&#25110;&#35519;&#25972;&#25628;&#23563;&#26465;&#20214;&#12290;</div>
+      {% endif %}
+    </div>
+  </main>
+</body>
+</html>
