@@ -4,9 +4,11 @@ from pathlib import Path
 
 from flask import Flask, jsonify, redirect, render_template, request, send_file, url_for
 
+from analyst import build_market_brief, build_stock_radar
 from crawler import fetch_latest_news
 from main import CSV_PATH, write_csv
 from parser import enrich_news_item
+from stock_universe import load_listed_stocks, refresh_listed_stocks
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -82,6 +84,8 @@ def index():
     all_categories = sorted(
         {category for item in news_items for category in item.get("categories", [])}
     )
+    market_brief = build_market_brief(news_items)
+    stock_radar = build_stock_radar(news_items)
 
     return render_template(
         "index.html",
@@ -90,6 +94,9 @@ def index():
         keyword=keyword,
         selected_category=category,
         categories=all_categories,
+        market_brief=market_brief,
+        stock_radar=stock_radar[:10],
+        stock_count=len(load_listed_stocks()),
     )
 
 
@@ -100,12 +107,30 @@ def refresh():
     return redirect(url_for("index"))
 
 
+@app.route("/refresh-stocks")
+def refresh_stocks():
+    refresh_listed_stocks()
+    return redirect(url_for("index"))
+
+
 @app.route("/api/news")
 def api_news():
     keyword = request.args.get("q", "")
     category = request.args.get("category", "")
     news_items = filter_news(load_news(), keyword, category)
     return jsonify(news_items)
+
+
+@app.route("/api/analysis")
+def api_analysis():
+    news_items = load_news()
+    return jsonify(
+        {
+            "market_brief": build_market_brief(news_items),
+            "stock_radar": build_stock_radar(news_items),
+            "stock_count": len(load_listed_stocks()),
+        }
+    )
 
 
 @app.route("/download/csv")
@@ -124,7 +149,7 @@ def download_json():
 
 @app.route("/health")
 def health():
-    return {"status": "ok", "items": len(load_news())}
+    return {"status": "ok", "items": len(load_news()), "stocks": len(load_listed_stocks())}
 
 
 if __name__ == "__main__":
