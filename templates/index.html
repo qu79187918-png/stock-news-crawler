@@ -119,6 +119,105 @@
       border-color: var(--line);
     }
 
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    .panel h2 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+
+    .view {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      border-radius: 999px;
+      padding: 4px 11px;
+      color: #fff;
+      background: var(--brand);
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .brief {
+      margin: 10px 0 0;
+      color: #334155;
+      font-size: 14px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fbfcfe;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 18px;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .radar {
+      display: grid;
+      gap: 8px;
+    }
+
+    .radar-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 8px;
+    }
+
+    .radar-row:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .radar-name {
+      font-weight: 700;
+    }
+
+    .radar-meta {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .radar-view {
+      color: #244b6f;
+      background: var(--chip);
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
     main {
       padding: 12px 0 28px;
     }
@@ -209,6 +308,14 @@
         grid-template-columns: 1fr;
       }
 
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+
       .actions {
         flex-direction: column;
       }
@@ -250,6 +357,47 @@
 
   <main>
     <div class="wrap">
+      <section class="dashboard">
+        <div class="panel">
+          <h2>&#20998;&#26512;&#24107;&#32317;&#35413;</h2>
+          <span class="view">{{ market_brief.market_view }}</span>
+          <p class="brief">{{ market_brief.commentary }}</p>
+          <div class="metrics">
+            <div class="metric">
+              <strong>{{ stock_count }}</strong>
+              <span>&#19978;&#24066;&#32929;&#31080;&#31684;&#22285;</span>
+            </div>
+            <div class="metric">
+              <strong>{{ market_brief.sentiment_score }}</strong>
+              <span>&#26032;&#32862;&#24773;&#32210;&#20998;&#25976;</span>
+            </div>
+            <div class="metric">
+              <strong>{{ total_count }}</strong>
+              <span>&#24050;&#25972;&#29702;&#26032;&#32862;</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>&#20491;&#32929;&#38647;&#36948;</h2>
+          {% if stock_radar %}
+            <div class="radar">
+              {% for stock in stock_radar %}
+                <div class="radar-row">
+                  <div>
+                    <div class="radar-name">{{ stock.name }} {{ stock.code }}</div>
+                    <div class="radar-meta">{{ stock.industry }} · {{ stock.mentions }} &#21063;&#26032;&#32862;</div>
+                  </div>
+                  <div class="radar-view">{{ stock.view }}</div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty">&#30446;&#21069;&#27794;&#26377;&#27161;&#35352;&#21040;&#20491;&#32929;&#26032;&#32862;&#12290;</div>
+          {% endif %}
+        </div>
+      </section>
+
       {% if news_items %}
         <div class="news-list">
           {% for item in news_items %}
@@ -259,7 +407,7 @@
               <p class="summary">{{ item.summary }}</p>
               <div class="chips">
                 {% for stock in item.related_stocks %}
-                  <span class="chip stock">{{ stock.name }} {{ stock.code }}</span>
+                  <span class="chip stock">{{ stock.name }} {{ stock.code }}{% if stock.industry %} · {{ stock.industry }}{% endif %}</span>
                 {% endfor %}
                 {% for category in item.categories %}
                   <span class="chip">{{ category }}</span>
