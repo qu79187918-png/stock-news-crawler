@@ -10,6 +10,9 @@ A simple Python crawler and mobile-friendly web app for Taiwan stock news.
 - Load all listed Taiwan stocks from TWSE/MOPS open data.
 - Show an analyst-style market brief and stock radar.
 - Organize news by source, source category, theme category, and news type.
+- Add favorite stocks and generate analyst-style reports for those stocks.
+- Reference related news, TWSE trading data, institutional flows, valuation data, and margin data when available.
+- Big/small order data is marked as pending because a stable free public source has not been connected yet.
 - Classify news by keywords: AI, semiconductor, defense, shipping, construction, finance, biotech.
 - Export CSV and JSON.
 - Provide a mobile-friendly web page with search, category filters, refresh, and download buttons.
@@ -59,8 +62,15 @@ Outputs:
 | `/` | Web search page |
 | `/refresh` | Fetch latest news |
 | `/refresh-stocks` | Refresh listed stock universe |
+| `/favorites` | Add favorite stock |
+| `/favorites/remove/<code>` | Remove favorite stock |
 | `/api/news` | JSON API |
 | `/api/analysis` | Analyst brief and stock radar API |
+| `/api/favorites` | Favorite stock analyst reports |
 | `/download/csv` | Download CSV |
 | `/download/json` | Download JSON |
 | `/health` | Health check |
+
+## Data Note
+
+The analyst report is a rule-based information summary, not investment advice. It uses available public data and clearly marks missing data sources.
