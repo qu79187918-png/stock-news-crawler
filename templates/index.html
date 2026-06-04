@@ -126,6 +126,109 @@
       margin-bottom: 12px;
     }
 
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 18px 0 10px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .favorite-form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin: 0;
+    }
+
+    .favorite-grid {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .favorite-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    .favorite-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: start;
+    }
+
+    .favorite-name {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .subtle {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .report-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .report-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fbfcfe;
+    }
+
+    .report-box h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+    }
+
+    .report-box ul {
+      margin: 0;
+      padding-left: 18px;
+      color: #334155;
+      font-size: 13px;
+    }
+
+    .data-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .data-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px;
+      background: #fff;
+      min-height: 74px;
+    }
+
+    .data-card strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .data-card span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
     .panel {
       background: var(--panel);
       border: 1px solid var(--line);
@@ -312,6 +415,20 @@
         grid-template-columns: 1fr;
       }
 
+      .section-title {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .favorite-form {
+        grid-template-columns: 1fr;
+      }
+
+      .report-grid,
+      .data-grid {
+        grid-template-columns: 1fr;
+      }
+
       .metrics {
         grid-template-columns: 1fr;
       }
@@ -409,6 +526,123 @@
           {% endif %}
         </div>
       </section>
+
+      <div class="section-title">
+        <h2>&#25105;&#30340;&#25910;&#34255;&#20491;&#32929;&#20998;&#26512;&#24107;</h2>
+        <form class="favorite-form" method="post" action="{{ url_for('add_favorite_route') }}">
+          <input name="stock" placeholder="&#36664;&#20837;&#32929;&#31080;&#20195;&#34399;&#25110;&#20844;&#21496;&#21517;&#65292;&#20363;&#22914; 2330 &#25110; &#21488;&#31309;&#38651;">
+          <button type="submit">&#21152;&#20837;&#25910;&#34255;</button>
+        </form>
+      </div>
+
+      {% if favorite_reports %}
+        <section class="favorite-grid">
+          {% for report in favorite_reports %}
+            <div class="favorite-card">
+              <div class="favorite-head">
+                <div>
+                  <div class="favorite-name">{{ report.stock.name }} {{ report.stock.code }}</div>
+                  <div class="subtle">{{ report.stock.industry }} · &#20449;&#24515;&#24230; {{ report.confidence }} · {{ report.news_count }} &#21063;&#30456;&#38364;&#26032;&#32862;</div>
+                </div>
+                <div>
+                  <span class="view">{{ report.view }}</span>
+                  <form method="post" action="{{ url_for('remove_favorite_route', code=report.stock.code) }}" style="margin-top:8px">
+                    <button type="submit" class="button">&#31227;&#38500;</button>
+                  </form>
+                </div>
+              </div>
+              <p class="brief">{{ report.thesis }}</p>
+              <div class="chips">
+                {% for category in report.top_categories %}
+                  <span class="chip">{{ category }}</span>
+                {% endfor %}
+                {% for news_type in report.top_news_types %}
+                  <span class="chip">{{ news_type }}</span>
+                {% endfor %}
+              </div>
+
+              <div class="data-grid">
+                <div class="data-card">
+                  <strong>&#20132;&#26131;&#36039;&#26009;</strong>
+                  <span>
+                    {% if report.market_data.price.status == "ok" %}
+                      {{ report.market_data.price.date }} 收 {{ report.market_data.price["收盤價"] }}
+                    {% else %}
+                      {{ report.market_data.price.status }}
+                    {% endif %}
+                  </span>
+                </div>
+                <div class="data-card">
+                  <strong>&#27861;&#20154;&#20986;&#20837;</strong>
+                  <span>
+                    {% if report.market_data.institutional.status == "ok" %}
+                      {{ report.market_data.institutional.date }} 三大法人 {{ report.market_data.institutional.get("三大法人買賣超股數", "-") }}
+                    {% else %}
+                      {{ report.market_data.institutional.status }}
+                    {% endif %}
+                  </span>
+                </div>
+                <div class="data-card">
+                  <strong>&#20844;&#21496;&#20272;&#20540;</strong>
+                  <span>
+                    {% if report.market_data.valuation.status == "ok" %}
+                      PE {{ report.market_data.valuation.get("本益比", "-") }} / PB {{ report.market_data.valuation.get("股價淨值比", "-") }}
+                    {% else %}
+                      {{ report.market_data.valuation.status }}
+                    {% endif %}
+                  </span>
+                </div>
+                <div class="data-card">
+                  <strong>&#36039;&#37329;&#27969;&#21521;</strong>
+                  <span>
+                    {% if report.market_data.margin.status == "ok" %}
+                      融資 {{ report.market_data.margin.get("融資餘額", "-") }} / 融券 {{ report.market_data.margin.get("融券餘額", "-") }}
+                    {% else %}
+                      {{ report.market_data.margin.status }}
+                    {% endif %}
+                  </span>
+                </div>
+              </div>
+
+              <div class="report-grid">
+                <div class="report-box">
+                  <h3>&#20998;&#26512;&#24107;&#20381;&#25818;</h3>
+                  <ul>
+                    {% for item in report.evidence %}
+                      <li>{{ item }}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+                <div class="report-box">
+                  <h3>&#39080;&#38570;&#33287;&#26410;&#23436;&#25972;&#36039;&#26009;</h3>
+                  <ul>
+                    {% for item in report.risks %}
+                      <li>{{ item }}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              </div>
+
+              {% if report.latest_news %}
+                <div class="report-box" style="margin-top:10px">
+                  <h3>&#25910;&#34255;&#32929;&#37325;&#40670;&#26032;&#32862;</h3>
+                  <ul>
+                    {% for item in report.latest_news %}
+                      <li><a href="{{ item.link }}" target="_blank" rel="noopener noreferrer">{{ item.title }}</a></li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </section>
+      {% else %}
+        <div class="empty">&#23578;&#26410;&#25910;&#34255;&#20491;&#32929;&#12290;&#21487;&#20197;&#20808;&#21152;&#20837; 2330&#12289;2317&#12289;2454 &#31561;&#32929;&#31080;&#12290;</div>
+      {% endif %}
+
+      <div class="section-title">
+        <h2>&#20840;&#24066;&#22580;&#36001;&#32147;&#26032;&#32862;&#25972;&#29702;</h2>
+      </div>
 
       {% if news_items %}
         <div class="news-list">
