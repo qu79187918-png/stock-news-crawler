@@ -65,7 +65,7 @@
 
     form {
       display: grid;
-      grid-template-columns: 1fr 160px auto;
+      grid-template-columns: 1fr 140px 140px 140px auto;
       gap: 8px;
       margin-top: 14px;
     }
@@ -343,11 +343,23 @@
             <option value="{{ category }}" {% if category == selected_category %}selected{% endif %}>{{ category }}</option>
           {% endfor %}
         </select>
+        <select name="source">
+          <option value="">&#20840;&#37096;&#20358;&#28304;</option>
+          {% for source in sources %}
+            <option value="{{ source }}" {% if source == selected_source %}selected{% endif %}>{{ source }}</option>
+          {% endfor %}
+        </select>
+        <select name="news_type">
+          <option value="">&#20840;&#37096;&#39006;&#22411;</option>
+          {% for news_type in news_types %}
+            <option value="{{ news_type }}" {% if news_type == selected_news_type %}selected{% endif %}>{{ news_type }}</option>
+          {% endfor %}
+        </select>
         <button type="submit">&#26597;&#35426;</button>
       </form>
 
       <div class="actions">
-        <a class="button" href="{{ url_for('refresh') }}">&#21047;&#26032;&#26368;&#26032;&#26032;&#32862;</a>
+        <a class="button" href="{{ url_for('refresh', limit=100) }}">&#21047;&#26032; 100 &#21063;&#26032;&#32862;</a>
         <a class="button" href="{{ url_for('download_csv') }}">&#19979;&#36617; CSV</a>
         <a class="button" href="{{ url_for('download_json') }}">&#19979;&#36617; JSON</a>
         <a class="button" href="{{ url_for('index') }}">&#28165;&#38500;&#31621;&#36984;</a>
@@ -403,7 +415,7 @@
           {% for item in news_items %}
             <article>
               <h2><a href="{{ item.link }}" target="_blank" rel="noopener noreferrer">{{ item.title }}</a></h2>
-              <div class="meta">{{ item.time }} &middot; {{ item.source }}</div>
+              <div class="meta">{{ item.time }} &middot; {{ item.source }}{% if item.source_category %} &middot; {{ item.source_category }}{% endif %}</div>
               <p class="summary">{{ item.summary }}</p>
               <div class="chips">
                 {% for stock in item.related_stocks %}
@@ -411,6 +423,9 @@
                 {% endfor %}
                 {% for category in item.categories %}
                   <span class="chip">{{ category }}</span>
+                {% endfor %}
+                {% for news_type in item.news_types %}
+                  <span class="chip">{{ news_type }}</span>
                 {% endfor %}
               </div>
             </article>
