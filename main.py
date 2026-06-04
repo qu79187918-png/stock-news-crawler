@@ -33,7 +33,7 @@ def main() -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Simple Taiwan stock news crawler")
-    parser.add_argument("--limit", type=int, default=20, help="Maximum number of news items")
+    parser.add_argument("--limit", type=int, default=100, help="Maximum number of news items")
     return parser.parse_args()
 
 
@@ -50,7 +50,17 @@ def write_json(news_items: list[dict], path: Path) -> None:
 
 
 def write_csv(news_items: list[dict], path: Path) -> None:
-    fieldnames = ["title", "time", "source", "link", "summary", "related_stocks", "categories"]
+    fieldnames = [
+        "title",
+        "time",
+        "source",
+        "source_category",
+        "link",
+        "summary",
+        "related_stocks",
+        "categories",
+        "news_types",
+    ]
 
     with path.open("w", encoding="utf-8-sig", newline="") as file:
         writer = csv.DictWriter(file, fieldnames=fieldnames)
@@ -58,8 +68,10 @@ def write_csv(news_items: list[dict], path: Path) -> None:
 
         for item in news_items:
             row = item.copy()
+            row.pop("timestamp", None)
             row["related_stocks"] = json.dumps(row.get("related_stocks", []), ensure_ascii=False)
             row["categories"] = json.dumps(row.get("categories", []), ensure_ascii=False)
+            row["news_types"] = json.dumps(row.get("news_types", []), ensure_ascii=False)
             writer.writerow(row)
 
 
