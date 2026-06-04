@@ -1,5 +1,6 @@
 import html
 import logging
+import os
 import re
 import warnings
 import xml.etree.ElementTree as ET
@@ -30,6 +31,7 @@ REQUEST_HEADERS = {
     )
 }
 _SSL_FALLBACK_NOTIFIED = False
+FETCH_ARTICLE_DETAILS = os.environ.get("FETCH_ARTICLE_DETAILS", "false").lower() == "true"
 
 
 def fetch_latest_news(limit: int = 20) -> list[dict]:
@@ -68,7 +70,7 @@ def _fetch_rss_items(source: dict) -> list[dict]:
                 or _get_text(item, "updated")
             )
             rss_summary = _clean_text(_get_text(item, "description"))
-            article_summary = _fetch_article_summary(link)
+            article_summary = _fetch_article_summary(link) if FETCH_ARTICLE_DETAILS else ""
 
             results.append(
                 {
